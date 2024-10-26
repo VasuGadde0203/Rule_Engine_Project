@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rule Engine</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        h1, h2 {
+            color: #333;
+        }
+        input, textarea {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        button {
+            padding: 10px 15px;
+            background-color: #28a745;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #218838;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+            font-weight: bold;
+        }
+        tr:hover {
+            background-color: #f1f1f1;
+        }
+        #evaluation-result {
+            font-weight: bold;
+            margin-top: 10px;
+        }
+    </style>
+    <script>
+        async function createRule() {
+            const rule = document.getElementById('create-rule-input').value;
+            const response = await fetch('/api/create_rule/', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ rule })
+            });
+            if (response.ok) {
+            // Open the display rule page in a new tab
+            window.open('/display_rule/', '_blank');
+        } else {
+            const data = await response.json();
+            document.getElementById('create-rule-output').innerText = JSON.stringify(data);
+        }
+            // const data = await response.json();
+            // document.getElementById('create-rule-output').innerText = JSON.stringify(data);
+        }
+
+        async function combineRules() {
+            const rules = document.getElementById('combine-rules-input').value.split('\n');
+            const response = await fetch('/api/combine_rules/', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ rules })
+            });
+            if (response.ok) {
+            // Open the display rule page in a new tab
+            window.open('/combined_display_rule/', '_blank');
+        } else {
+            const data = await response.json();
+            document.getElementById('combine-rules-output').innerText = JSON.stringify(data);
+        }
+            // const data = await response.json();
+            // document.getElementById('combine-rules-output').innerText = JSON.stringify(data);
+        }
+
+        async function evaluateRule() {
+            const ast = document.getElementById('evaluate-rule-ast').value;
+            const age = document.getElementById('evaluate-rule-age').value;
+            const department = document.getElementById('evaluate-rule-department').value;
+            const salary = document.getElementById('evaluate-rule-salary').value;
+            const experience = document.getElementById('evaluate-rule-experience').value;
+
+            const response = await fetch('/api/evaluate_rule/', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    ast,
+                    data: {
+                        age: parseInt(age),
+                        department,
+                        salary: parseInt(salary),
+                        experience: parseInt(experience)
+                    }
+                })
+            });
+            const data = await response.json();
+            // Populate table with evaluation details
+            const table = document.getElementById('evaluation-details-table');
+            const tbody = document.getElementById('evaluation-details-body');
+            tbody.innerHTML = '';  // Clear previous data
+            if (data.evaluation_details) {
+                table.style.display = 'block';
+                data.evaluation_details.forEach(detail => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${detail.field}</td>
+                        <td>${detail.entered_value}</td>
+                        <td>${detail.rule_criteria}</td>
+                    `;
+                    tbody.appendChild(row);
+                });
+            } else {
+                table.style.display = 'none';
+            }
+
+            // Display the final result below the table
+            document.getElementById('evaluation-result').innerText = `Result: ${data.result ? 'True' : 'False'}`;
+            // document.getElementById('evaluate-rule-output').innerText = JSON.stringify(data);
+        }
+    </script>
+</head>
+<body>
+    <h1>Rule Engine</h1>
+
+    <h2>Create Rule</h2>
+    <input type="text" id="create-rule-input" placeholder="Enter rule">
+    <button onclick="createRule()">Create Rule</button>
+    <pre id="create-rule-output"></pre>
+
+    <h2>Combine Rules</h2>
+    <textarea id="combine-rules-input" rows="4" placeholder="Enter rules, one per line"></textarea>
+    <button onclick="combineRules()">Combine Rules</button>
+    <pre id="combine-rules-output"></pre>
+
+    <h2>Evaluate Rule</h2>
+    <input type="text" id="evaluate-rule-ast" placeholder="Enter AST representation">
+    <input type="number" id="evaluate-rule-age" placeholder="Age">
+    <input type="text" id="evaluate-rule-department" placeholder="Department">
+    <input type="number" id="evaluate-rule-salary" placeholder="Salary">
+    <input type="number" id="evaluate-rule-experience" placeholder="Experience">
+    <button onclick="evaluateRule()">Evaluate Rule</button>
+    <!-- <pre id="evaluate-rule-output"></pre> -->
+
+    <!-- Table to display evaluation details -->
+    <table id="evaluation-details-table" style="display: none;">
+        <thead>
+            <tr>
+                <th>Field</th>
+                <th>Entered Value</th>
+                <th>Rule Criteria</th>
+            </tr>
+        </thead>
+        <tbody id="evaluation-details-body">
+            <!-- Dynamic rows added here -->
+        </tbody>
+    </table>
+    <!-- Result display -->
+    <div id="evaluation-result" style="font-weight: bold; margin-top: 10px;"></div>
+</body>
+</html>
